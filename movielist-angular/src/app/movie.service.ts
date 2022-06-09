@@ -1,25 +1,124 @@
 import { Injectable } from '@angular/core';
-import { Movie } from './movie';
-import { MOVIES } from './mock-movies';
-import { Observable, of } from 'rxjs';
-import { MessageService } from './message.service';
-@Injectable({
-  providedIn: 'root'
-})
-export class MovieService {
-constructor(private messageService: MessageService) { }
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
+import { Observable, of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
+
+import { Movie } from './movie';
+import { MessageService } from './message.service';
+
+
+@Injectable({ providedIn: 'root' })
+
+export class MovieService {
+
+  private moviesUrl = 'api/movies';  // URL to web api
+
+  httpOptions = {
+    headers: new HttpHeaders({ 'Content-Type': 'application/json' })
+  };
+
+  constructor(
+    private http: HttpClient,
+    private messageService: MessageService) { }
+
+  /** GET heroes from the server */
   getMovies(): Observable<Movie[]> {
-    const movies = of(MOVIES);
-    this.messageService.add('MovieService: fetched movies');
-    return movies;
+    return this.http.get<Movie[]>(this.moviesUrl)
+      .pipe(
+        tap(_ => this.log('fetched heroes')),
+        catchError(this.handleError<Movie[]>('getMovies', []))
+      );
   }
-  
+
+  /** GET hero by id. Return `undefined` when id not found */
+  getMovieNo404<Data>(id: number): Observable<Movie> {
+    const url = `${this.moviesUrl}/?id=${id}`;
+    return this.http.get<Movie[]>(url)
+      .pipe(
+        map(movies => movies[0]), // returns a {0|1} element array
+        tap(h => {
+          const outcome = h ? 'fetched' : 'did not find';
+          this.log(`${outcome} movie id=${id}`);
+        }),
+        catchError(this.handleError<Movie>(`getMovie id=${id}`))
+      );
+  }
+
+  /** GET hero by id. Will 404 if id not found */
   getMovie(id: number): Observable<Movie> {
-    // For now, assume that a hero with the specified `id` always exists.
-    // Error handling will be added in the next step of the tutorial.
-    const movie = MOVIES.find(h => h.id === id)!;
-    this.messageService.add(`MovieService: fetched movie id=${id}`);
-    return of(movie);
+    const url = `${this.moviesUrl}/${id}`;
+    return this.http.get<Movie>(url).pipe(
+      tap(_ => this.log(`fetched movie id=${id}`)),
+      catchError(this.handleError<Movie>(`getMovie id=${id}`))
+    );
+  }
+
+  /* GET heroes whose name contains search term */
+  searchMovies(term: string): Observable<Movie[]> {
+    if (!term.trim()) {
+      // if not search term, return empty hero array.
+      return of([]);
+    }
+    return this.http.get<Movie[]>(`${this.moviesUrl}/?name=${term}`).pipe(
+      tap(x => x.length ?
+         this.log(`found movies matching "${term}"`) :
+         this.log(`no movies matching "${term}"`)),
+      catchError(this.handleError<Movie[]>('searchMovies', []))
+    );
+  }
+
+  //////// Save methods //////////
+
+  /** POST: add a new hero to the server */
+  addMovie(movie: Movie): Observable<Movie> {
+    return this.http.post<Movie>(this.moviesUrl, movie, this.httpOptions).pipe(
+      tap((newMovie: Movie) => this.log(`added movie w/ id=${newMovie.id}`)),
+      catchError(this.handleError<Movie>('addMovie'))
+    );
+  }
+
+  /** DELETE: delete the hero from the server */
+  deleteMovie(id: number): Observable<Movie> {
+    const url = `${this.moviesUrl}/${id}`;
+
+    return this.http.delete<Movie>(url, this.httpOptions).pipe(
+      tap(_ => this.log(`deleted movie id=${id}`)),
+      catchError(this.handleError<Movie>('deleteMovie'))
+    );
+  }
+
+/** PUT: update the hero on the server */
+updateMovie(movie: Movie): Observable<any> {
+  return this.http.put(this.moviesUrl, movie, this.httpOptions).pipe(
+    tap(_ => this.log(`updated movie id=${movie.id}`)),
+    catchError(this.handleError<any>('updateHero'))
+  );
+}
+  /**
+ * Handle Http operation that failed.
+ * Let the app continue.
+ *
+ * @param operation - name of the operation that failed
+ * @param result - optional value to return as the observable result
+ */
+private handleError<T>(operation = 'operation', result?: T) {
+  return (error: any): Observable<T> => {
+
+    // TODO: send the error to remote logging infrastructure
+    console.error(error); // log to console instead
+
+    // TODO: better job of transforming error for user consumption
+    this.log(`${operation} failed: ${error.message}`);
+
+    // Let the app keep running by returning an empty result.
+    return of(result as T);
+  };
+}
+
+
+  /** Log a HeroService message with the MessageService */
+  private log(message: string) {
+    this.messageService.add(`MovieService: ${message}`);
   }
 }
