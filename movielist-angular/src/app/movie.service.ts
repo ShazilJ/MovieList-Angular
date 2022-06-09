@@ -7,11 +7,19 @@ import { MessageService } from './message.service';
   providedIn: 'root'
 })
 export class MovieService {
+constructor(private messageService: MessageService) { }
+
   getMovies(): Observable<Movie[]> {
     const movies = of(MOVIES);
     this.messageService.add('MovieService: fetched movies');
     return movies;
   }
-
-  constructor(private messageService: MessageService) { }
+  
+  getMovie(id: number): Observable<Movie> {
+    // For now, assume that a hero with the specified `id` always exists.
+    // Error handling will be added in the next step of the tutorial.
+    const movie = MOVIES.find(h => h.id === id)!;
+    this.messageService.add(`MovieService: fetched movie id=${id}`);
+    return of(movie);
+  }
 }

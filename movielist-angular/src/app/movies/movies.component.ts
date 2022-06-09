@@ -14,9 +14,9 @@ export class MoviesComponent implements OnInit {
   
   // movies = MOVIES;
    
-  selectedMovie?: Movie;
+ // selectedMovie?: Movie;
  movies: Movie[] = [];
-  constructor(private movieService: MovieService, private messageService: MessageService) { }
+  constructor(private movieService: MovieService) { }//, private messageService: MessageService
 
  
   ngOnInit(): void { 
@@ -27,10 +27,10 @@ export class MoviesComponent implements OnInit {
     this.movieService.getMovies()
         .subscribe(movies => this.movies = movies);
   }
-
+/*
   onSelect(movie: Movie): void {
     this.selectedMovie = movie;
     this.messageService.add(`MoviesComponent: Selected movie id=${movie.id}`);
   }
-
+*/
 }

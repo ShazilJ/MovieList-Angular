@@ -2,14 +2,19 @@
 <h2>Name of Movies</h2>
 <ul class="movies">
   <li *ngFor="let movie of movies">
-    <button [class.selected]="movie === selectedMovie" type="button" (click)="onSelect(movie)">
+    <a routerLink="/detail/{{movie.id}}">
+      <span class="badge">{{movie.id}}</span> {{movie.name}}
+    </a>
+    <!---
+    <button type="button" (click)="onSelect(movie)" [class.selected]="movie === selectedMovie">
       <span class="badge">{{movie.id}}</span>
       <span class="name">{{movie.name}}</span>
     </button>
+  -->
   </li>
 </ul>
 
-<app-movie-detail [movie]="selectedMovie"></app-movie-detail>
+<!--<app-movie-detail [movie]="selectedMovie"></app-movie-detail> -->
 <!---
 <div *ngIf="selectedMovie">
     <h2>{{selectedMovie.name | uppercase}} Details</h2>
